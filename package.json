@@ -3,14 +3,14 @@
   "displayName": "HS Plug",
   "name": "homebridge-hs-plug",
   "version": "1.0.0",
-  "description": "A short description about what your plugin does.",
+  "description": "Provides the ability to run TP-Link HS1XX plugs with HW:4.1 and SW:1.1.0",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "git://github.com/USERNAME/GITHUB_PROJECT_NAME.git"
+    "url": "git://github.com/ghostseven/homebridge-hs-plug.git"
   },
   "bugs": {
-    "url": "https://github.com/USERNAME/GITHUB_PROJECT_NAME/issues"
+    "url": "https://github.com/ghostseven/homebridge-hs-plug/issues"
   },
   "engines": {
     "node": ">=10.17.0",
