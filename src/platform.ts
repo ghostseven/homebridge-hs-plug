@@ -1,14 +1,14 @@
 import { API, DynamicPlatformPlugin, Logger, PlatformAccessory, PlatformConfig, Service, Characteristic } from 'homebridge';
-
+import execa from "execa";
 import { PLATFORM_NAME, PLUGIN_NAME } from './settings';
-import { ExamplePlatformAccessory } from './platformAccessory';
+import { HSPlug } from './platformAccessory';
 
-/**
- * HomebridgePlatform
- * This class is the main constructor for your plugin, this is where you should
- * parse the user config and discover/register accessories with Homebridge.
- */
-export class ExampleHomebridgePlatform implements DynamicPlatformPlugin {
+interface HSPlugConfig extends PlatformConfig {
+  user?: string;
+  password?: string;
+  klaponly?: boolean;
+}
+export class HSPlugPlatform implements DynamicPlatformPlugin {
   public readonly Service: typeof Service = this.api.hap.Service;
   public readonly Characteristic: typeof Characteristic = this.api.hap.Characteristic;
 
@@ -17,7 +17,7 @@ export class ExampleHomebridgePlatform implements DynamicPlatformPlugin {
 
   constructor(
     public readonly log: Logger,
-    public readonly config: PlatformConfig,
+    public readonly config: HSPlugConfig,
     public readonly api: API,
   ) {
     this.log.debug('Finished initializing platform:', this.config.name);
@@ -50,28 +50,73 @@ export class ExampleHomebridgePlatform implements DynamicPlatformPlugin {
    * must not be registered again to prevent "duplicate UUID" errors.
    */
   discoverDevices() {
+    interface Plug{
+      name: string;
+      host: string;
+      state: string;
+      MAC: string;
+      hw: string;
+      sw: string;
+    }
+    const devices:Plug[] = [];
+    
+    var execCMD: string = "kasa --klap ";
+    if(this.config.user){
+      execCMD += "--user '" + this.config.user + "' --password '" + this.config.password + "' ";
+    }
+    
+    var output: string = this.execCommand(execCMD);
 
-    // EXAMPLE ONLY
-    // A real plugin you would discover accessories from the local network, cloud services
-    // or a user-defined array in the platform config.
-    const exampleDevices = [
-      {
-        exampleUniqueId: 'ABCD',
-        exampleDisplayName: 'Bedroom',
-      },
-      {
-        exampleUniqueId: 'EFGH',
-        exampleDisplayName: 'Kitchen',
-      },
-    ];
+    const regex = /\=\=\ (.*)\ \=\=\n(.*)Host/g;
+    let result = output.match(regex) || [];
+
+      result.forEach((value,index) => {
+        let regex;
+        let rStr: string;  
+        if(index + 1 == result.length){
+          rStr = value.substring(0,value.lastIndexOf('-')).replace('== ','');
+          regex = new RegExp(rStr + '(.*)', 's');
+        }else{
+          rStr = value.substring(0,value.lastIndexOf('-')).replace('== ','');
+          let nextValue = result[index+1];
+          let nrStr = nextValue.substring(0,nextValue.lastIndexOf('-')).replace('== ','');
+          regex = new RegExp(rStr + '(.*)' + nrStr, 's');
+        }
+        let out = output.match(regex) || [];
+        let plugStr = out[1];
+        let rState = /Device state: (.*)/;
+        let rHost = /Host: (.*)/;
+        let rMAC = /MAC \(rssi\):   (.*) /;
+        let rHw = /Hardware:(\s+)(\d+.\d+)/;
+        let rSw = /Software:(\s+)(\d+.\d+.\d+)/;
+        let plug: Plug = {name: rStr, host: (plugStr.match(rHost) || [])[1].toString(), 
+          state: (plugStr.match(rState) || [])[1].toString(), MAC: (plugStr.match(rMAC) || [])[1].toString(),
+          hw: (plugStr.match(rHw) || [])[2].toString(), sw: (plugStr.match(rSw) || [])[2].toString()
+        }
+
+
+        //if we have klaponly set this will only add the new klap updated 4.1 plugs so you can keen on using your existing pluggin 
+        //without overlap. 
+        if(this.config.klaponly !== undefined){
+          if(this.config.klaponly){
+            if(plug.hw == "4.1" && plug.sw == "1.1.0"){
+              devices.push(plug);
+            }
+          }else{
+            devices.push(plug);
+          }
+        }else{
+          devices.push(plug);
+        }
+      });
 
     // loop over the discovered devices and register each one if it has not already been registered
-    for (const device of exampleDevices) {
+    for (const device of devices) {
 
       // generate a unique id for the accessory this should be generated from
       // something globally unique, but constant, for example, the device serial
       // number or MAC address
-      const uuid = this.api.hap.uuid.generate(device.exampleUniqueId);
+      const uuid = this.api.hap.uuid.generate(device.MAC);
 
       // see if an accessory with the same uuid has already been registered and restored from
       // the cached devices we stored in the `configureAccessory` method above
@@ -87,7 +132,7 @@ export class ExampleHomebridgePlatform implements DynamicPlatformPlugin {
 
         // create the accessory handler for the restored accessory
         // this is imported from `platformAccessory.ts`
-        new ExamplePlatformAccessory(this, existingAccessory);
+        new HSPlug(this.log, this, existingAccessory,);
 
         // it is possible to remove platform accessories at any time using `api.unregisterPlatformAccessories`, eg.:
         // remove platform accessories when no longer present
@@ -95,10 +140,10 @@ export class ExampleHomebridgePlatform implements DynamicPlatformPlugin {
         // this.log.info('Removing existing accessory from cache:', existingAccessory.displayName);
       } else {
         // the accessory does not yet exist, so we need to create it
-        this.log.info('Adding new accessory:', device.exampleDisplayName);
+        this.log.info('Adding new accessory:', device.name);
 
         // create a new accessory
-        const accessory = new this.api.platformAccessory(device.exampleDisplayName, uuid);
+        const accessory = new this.api.platformAccessory(device.name, uuid);
 
         // store a copy of the device object in the `accessory.context`
         // the `context` property can be used to store any data about the accessory you may need
@@ -106,11 +151,33 @@ export class ExampleHomebridgePlatform implements DynamicPlatformPlugin {
 
         // create the accessory handler for the newly create accessory
         // this is imported from `platformAccessory.ts`
-        new ExamplePlatformAccessory(this, accessory);
+        new HSPlug(this.log, this, accessory);
 
         // link the accessory to your platform
         this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
       }
     }
   }
+   // Execute a command, with error handling.
+   private execCommand(command: string): string {
+    try {
+
+      // We only want the stdout property from the return of execa.command.
+      const { stdout } = execa.commandSync(command, { shell: true });
+
+      // Return the value.
+      return stdout;
+
+    } catch(error) {
+
+      if(!(error instanceof Error)) {
+        //this.log.error("Unknown error received while attempting to execute command %s: %s.", command, error);
+        return "error";
+      }
+
+      //this.log.error("Error executing the command: %s.", error.message);
+      return "error";
+
+    }
+  } 
 }

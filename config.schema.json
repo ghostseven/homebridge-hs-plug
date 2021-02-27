@@ -1,5 +1,5 @@
 {
-  "pluginAlias": "ExampleHomebridgePlugin",
+  "pluginAlias": "HSPlug",
   "pluginType": "platform",
   "singular": true,
   "schema": {
@@ -9,8 +9,23 @@
         "title": "Name",
         "type": "string",
         "required": true,
-        "default": "Example Dynamic Platform"
-      }
+        "default": "HS Plug Platform"
+      },
+      "user":{
+        "title": "User Name",
+        "type": "string",
+        "required": false          
+      },
+      "password":{
+        "title": "Password",
+        "type": "string",
+        "required": false          
+      },
+      "klaponly":{
+        "title": "KLAP Only",
+        "type": "boolean",
+        "required": false          
+      }            
     }
   }
 }
