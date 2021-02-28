@@ -1,5 +1,5 @@
 import { API, DynamicPlatformPlugin, Logger, PlatformAccessory, PlatformConfig, Service, Characteristic } from 'homebridge';
-import execa from "execa";
+import execa from 'execa';
 import { PLATFORM_NAME, PLUGIN_NAME } from './settings';
 import { HSPlug } from './platformAccessory';
 
@@ -60,55 +60,55 @@ export class HSPlugPlatform implements DynamicPlatformPlugin {
     }
     const devices:Plug[] = [];
     
-    var execCMD: string = "kasa --klap ";
+    let execCMD = 'kasa --klap ';
     if(this.config.user){
-      execCMD += "--user '" + this.config.user + "' --password '" + this.config.password + "' ";
+      execCMD += '--user \'' + this.config.user + '\' --password \'' + this.config.password + '\' ';
     }
-    
-    var output: string = this.execCommand(execCMD);
 
-    const regex = /\=\=\ (.*)\ \=\=\n(.*)Host/g;
-    let result = output.match(regex) || [];
+    const output: string = this.execCommand(execCMD);
 
-      result.forEach((value,index) => {
-        let regex;
-        let rStr: string;  
-        if(index + 1 == result.length){
-          rStr = value.substring(0,value.lastIndexOf('-')).replace('== ','');
-          regex = new RegExp(rStr + '(.*)', 's');
-        }else{
-          rStr = value.substring(0,value.lastIndexOf('-')).replace('== ','');
-          let nextValue = result[index+1];
-          let nrStr = nextValue.substring(0,nextValue.lastIndexOf('-')).replace('== ','');
-          regex = new RegExp(rStr + '(.*)' + nrStr, 's');
-        }
-        let out = output.match(regex) || [];
-        let plugStr = out[1];
-        let rState = /Device state: (.*)/;
-        let rHost = /Host: (.*)/;
-        let rMAC = /MAC \(rssi\):   (.*) /;
-        let rHw = /Hardware:(\s+)(\d+.\d+)/;
-        let rSw = /Software:(\s+)(\d+.\d+.\d+)/;
-        let plug: Plug = {name: rStr, host: (plugStr.match(rHost) || [])[1].toString(), 
-          state: (plugStr.match(rState) || [])[1].toString(), MAC: (plugStr.match(rMAC) || [])[1].toString(),
-          hw: (plugStr.match(rHw) || [])[2].toString(), sw: (plugStr.match(rSw) || [])[2].toString()
-        }
+    const regex = /== (.*) ==\n(.*)Host/g;
+    const result = output.match(regex) || [];
+
+    result.forEach((value, index) => {
+      let regex;
+      let rStr: string;  
+      if(index + 1 === result.length){
+        rStr = value.substring(0, value.lastIndexOf('-')).replace('== ', '');
+        regex = new RegExp(rStr + '(.*)', 's');
+      }else{
+        rStr = value.substring(0, value.lastIndexOf('-')).replace('== ', '');
+        const nextValue = result[index+1];
+        const nrStr = nextValue.substring(0, nextValue.lastIndexOf('-')).replace('== ', '');
+        regex = new RegExp(rStr + '(.*)' + nrStr, 's');
+      }
+      const out = output.match(regex) || [];
+      const plugStr = out[1];
+      const rState = /Device state: (.*)/;
+      const rHost = /Host: (.*)/;
+      const rMAC = /MAC \(rssi\): {3}(.*) /;
+      const rHw = /Hardware:(\s+)(\d+.\d+)/;
+      const rSw = /Software:(\s+)(\d+.\d+.\d+)/;
+      const plug: Plug = {name: rStr, host: (plugStr.match(rHost) || [])[1].toString(), 
+        state: (plugStr.match(rState) || [])[1].toString(), MAC: (plugStr.match(rMAC) || [])[1].toString(),
+        hw: (plugStr.match(rHw) || [])[2].toString(), sw: (plugStr.match(rSw) || [])[2].toString(),
+      };
 
 
-        //if we have klaponly set this will only add the new klap updated 4.1 plugs so you can keen on using your existing pluggin 
-        //without overlap. 
-        if(this.config.klaponly !== undefined){
-          if(this.config.klaponly){
-            if(plug.hw == "4.1" && plug.sw == "1.1.0"){
-              devices.push(plug);
-            }
-          }else{
+      //if we have klaponly set this will only add the new klap updated 4.1 plugs so you can keen on using your existing pluggin 
+      //without overlap. 
+      if(this.config.klaponly !== undefined){
+        if(this.config.klaponly){
+          if(plug.hw === '4.1' && plug.sw === '1.1.0'){
             devices.push(plug);
           }
         }else{
           devices.push(plug);
         }
-      });
+      }else{
+        devices.push(plug);
+      }
+    });
 
     // loop over the discovered devices and register each one if it has not already been registered
     for (const device of devices) {
@@ -132,7 +132,7 @@ export class HSPlugPlatform implements DynamicPlatformPlugin {
 
         // create the accessory handler for the restored accessory
         // this is imported from `platformAccessory.ts`
-        new HSPlug(this.log, this, existingAccessory,);
+        new HSPlug(this.log, this, existingAccessory);
 
         // it is possible to remove platform accessories at any time using `api.unregisterPlatformAccessories`, eg.:
         // remove platform accessories when no longer present
@@ -158,8 +158,9 @@ export class HSPlugPlatform implements DynamicPlatformPlugin {
       }
     }
   }
-   // Execute a command, with error handling.
-   private execCommand(command: string): string {
+
+  // Execute a command, with error handling.
+  private execCommand(command: string): string {
     try {
 
       // We only want the stdout property from the return of execa.command.
@@ -171,12 +172,12 @@ export class HSPlugPlatform implements DynamicPlatformPlugin {
     } catch(error) {
 
       if(!(error instanceof Error)) {
-        //this.log.error("Unknown error received while attempting to execute command %s: %s.", command, error);
-        return "error";
+        this.log.error('Unknown error received while attempting to execute command %s: %s.', command, error);
+        return 'error';
       }
 
-      //this.log.error("Error executing the command: %s.", error.message);
-      return "error";
+      this.log.error('Error executing the command: %s.', error.message);
+      return 'error';
 
     }
   } 

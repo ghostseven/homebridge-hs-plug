@@ -1,5 +1,5 @@
-import { Service, PlatformAccessory, CharacteristicValue, CharacteristicSetCallback, CharacteristicGetCallback, Logger, HAPEncryption } from 'homebridge';
-import execa from "execa";
+import { Service, PlatformAccessory, CharacteristicValue, CharacteristicSetCallback, CharacteristicGetCallback, Logger} from 'homebridge';
+import execa from 'execa';
 import { HSPlugPlatform } from './platform';
 
 /**
@@ -11,13 +11,13 @@ export class HSPlug {
   private service: Service;
 
   private switchStates = {
-    On: false
+    On: false,
   };
 
   constructor(
     public readonly log: Logger,
     private readonly platform: HSPlugPlatform,
-    private readonly accessory: PlatformAccessory
+    private readonly accessory: PlatformAccessory,
   ) {
     
     // set accessory information
@@ -41,23 +41,27 @@ export class HSPlug {
       .on('get', this.getOn.bind(this));               // GET - bind to the `getOn` method below
 
     setInterval(() => {
-      var execCMD: string = "kasa ";
+      let execCMD = 'kasa ';
 
       //we only want to do the klap method of comms if we have a 4.1 hardware device running firmware 1.1.0
-      if(this.accessory.context.device.hw == "4.1" && this.accessory.context.device.sw == "1.1.0"){
-        execCMD += "--klap "
+      if(this.accessory.context.device.hw === '4.1' && this.accessory.context.device.sw === '1.1.0'){
+        execCMD += '--klap ';
         if(this.platform.config.user){
-          execCMD += "--user '" + this.platform.config.user + "' --password '" + this.platform.config.password + "' ";
+          execCMD += '--user \'' + this.platform.config.user + '\' --password \'' + this.platform.config.password + '\' ';
         }
       }  
-      execCMD += "--host " + this.accessory.context.device.host + " --plug state";
-      var output: string = this.execCommand(execCMD);
+      execCMD += '--host ' + this.accessory.context.device.host + ' --plug state';
+      const output: string = this.execCommand(execCMD);
   
-      const out = output.match('Device state\:(.*)\\n');
+      const out = output.match('Device state:(.*)\\n');
       if(out){
-        var strState: string = out[1].trim().toLocaleLowerCase();
-        if(strState == 'on') {this.switchStates.On = true; this.service.updateCharacteristic(this.platform.Characteristic.On, true);}
-        if(strState == 'off') {this.switchStates.On = false; this.service.updateCharacteristic(this.platform.Characteristic.On, false);}
+        const strState: string = out[1].trim().toLocaleLowerCase();
+        if(strState === 'on') {
+          this.switchStates.On = true; this.service.updateCharacteristic(this.platform.Characteristic.On, true);
+        }
+        if(strState === 'off') {
+          this.switchStates.On = false; this.service.updateCharacteristic(this.platform.Characteristic.On, false);
+        }
       }
     }, 10000);  
   }
@@ -65,20 +69,20 @@ export class HSPlug {
 
   setOn(value: CharacteristicValue, callback: CharacteristicSetCallback) {    
     this.switchStates.On = value as boolean;
-    var strState: string;
-    var execCMD: string = "kasa ";
+    let strState: string;
+    let execCMD = 'kasa ';
 
     (this.switchStates.On) ? strState = 'on' : strState = 'off';
 
     //we only want to do the klap method of comms if we have a 4.1 hardware device running firmware 1.1.0
-    if(this.accessory.context.device.hw == "4.1" && this.accessory.context.device.sw == "1.1.0"){
-      execCMD += "--klap "
+    if(this.accessory.context.device.hw === '4.1' && this.accessory.context.device.sw === '1.1.0'){
+      execCMD += '--klap ';
       if(this.platform.config.user !== undefined && this.platform.config.password !== undefined) {
-        execCMD += "--user '" + this.platform.config.user + "' --password '" + this.platform.config.password + "' ";
+        execCMD += '--user \'' + this.platform.config.user + '\' --password \'' + this.platform.config.password + '\' ';
       }      
     }
 
-    execCMD += "--host " + this.accessory.context.device.host + " --plug " + strState;
+    execCMD += '--host ' + this.accessory.context.device.host + ' --plug ' + strState;
     //this.log.info(execCMD);
     this.log.debug(this.execCommand(execCMD));
 
@@ -87,23 +91,27 @@ export class HSPlug {
   }
 
   getOn(callback: CharacteristicGetCallback) {
-    var execCMD: string = "kasa ";
+    let execCMD = 'kasa ';
 
     //we only want to do the klap method of comms if we have a 4.1 hardware device running firmware 1.1.0
-    if(this.accessory.context.device.hw == "4.1" && this.accessory.context.device.sw == "1.1.0"){
-      execCMD += "--klap "
+    if(this.accessory.context.device.hw === '4.1' && this.accessory.context.device.sw === '1.1.0'){
+      execCMD += '--klap ';
       if(this.platform.config.user){
-        execCMD += "--user '" + this.platform.config.user + "' --password '" + this.platform.config.password + "' ";
+        execCMD += '--user \'' + this.platform.config.user + '\' --password \'' + this.platform.config.password + '\' ';
       }
     }  
-    execCMD += "--host " + this.accessory.context.device.host + " --plug state";
-    var output: string = this.execCommand(execCMD);
+    execCMD += '--host ' + this.accessory.context.device.host + ' --plug state';
+    const output: string = this.execCommand(execCMD);
 
-    const out = output.match('Device state\:(.*)\\n');
+    const out = output.match('Device state:(.*)\\n');
     if(out){
-      var strState: string = out[1].trim().toLocaleLowerCase();
-      if(strState == 'on') {this.switchStates.On = true;}
-      if(strState == 'off') {this.switchStates.On = false;}
+      const strState: string = out[1].trim().toLocaleLowerCase();
+      if(strState === 'on') {
+        this.switchStates.On = true;
+      }
+      if(strState === 'off') {
+        this.switchStates.On = false;
+      }
     }
     const isOn = this.switchStates.On;
     this.platform.log.debug('Get Characteristic On ->', isOn);
@@ -124,11 +132,11 @@ export class HSPlug {
 
       if(!(error instanceof Error)) {
         //this.log.error("Unknown error received while attempting to execute command %s: %s.", command, error);
-        return "error";
+        return 'error';
       }
 
       //this.log.error("Error executing the command: %s.", error.message);
-      return "error";
+      return 'error';
 
     }
   }

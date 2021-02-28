@@ -1,9 +1,9 @@
 {
-  "private": true,
+  "private": false,
   "displayName": "HS Plug",
   "name": "homebridge-hs-plug",
   "version": "1.0.0",
-  "description": "Provides the ability to run TP-Link HS1XX plugs with HW:4.1 and SW:1.1.0",
+  "description": "HomeBridge module to control HS100 and HS110 switches, supports KLAP & FW:4.1 SW:1.1.0",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
