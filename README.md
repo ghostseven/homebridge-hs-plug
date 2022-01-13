@@ -47,7 +47,7 @@ With this setup I am going to assume you are on Linux or similar, if you are run
 
 Avaliable platform configuration options are as follows:
 - `platform` [required] this is always "HSPlug"
-- `name` [optional] this is the username of your kasa app login
+- `user` [optional] this is the username of your kasa app login
 - `password` [optional] this is the password of your kasa app login
 - `klaponly` [optional] this is a boolean to indicate you only was to use this plugin for the new 4.1 hardware. This allows you to keep on using your exisitng plugin setup for unaffected hardware. 
 
